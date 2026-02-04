@@ -1,56 +1,38 @@
 import subprocess
 import time
-import requests
+import json
+import urllib.request
 import pyperclip
-import sys
+import os
 
-NGROK_PORT = "5678"
-NGROK_API = "http://127.0.0.1:4040/api/tunnels"
-
-def start_ngrok():
-    print("🚀 Starting ngrok...")
-    return subprocess.Popen(
-        ["ngrok", "http", NGROK_PORT],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
-
-def wait_for_url():
-    print("⏳ Waiting for public URL...")
-    for _ in range(20):
-        try:
-            res = requests.get(NGROK_API).json()
-            tunnels = res.get("tunnels", [])
-            for t in tunnels:
-                if t.get("proto") == "https":
-                    return t["public_url"]
-        except:
-            pass
-        time.sleep(1)
-    return None
-
-def main():
-    ngrok_process = start_ngrok()
-
+def launch():
+    print("--- Starting ngrok ---")
+    # Start ngrok in the background
+    ngrok_proc = subprocess.Popen(["ngrok", "http", "5678"], stdout=subprocess.PIPE)
+    
+    # Give ngrok a moment to initialize and fetch a URL
+    time.sleep(3)
+    
     try:
-        public_url = wait_for_url()
-        if not public_url:
-            print("❌ Failed to get ngrok URL")
-            sys.exit(1)
+        # ngrok has a local API we can query to find the public URL
+        with urllib.request.urlopen("http://127.0.0.1:4040/api/tunnels") as response:
+            data = json.loads(response.read().decode())
+            public_url = data['tunnels'][0]['public_url']
+            
+            print(f"✅ Public URL: {public_url}")
+            pyperclip.copy(public_url)
+            print("📋 URL copied to clipboard!")
+            
+            # Set the environment variable for the current process
+            os.environ["WEBHOOK_URL"] = public_url + "/"
+            
+            print("--- Starting n8n ---")
+            # This will keep the script running and show n8n logs
+            subprocess.run(["n8n", "start"], shell=True)
 
-        pyperclip.copy(public_url)
-
-        print("\n✅ n8n is now public!")
-        print(f"🌍 Public URL: {public_url}")
-        print("📋 URL copied to clipboard")
-        print("\nPress CTRL+C to stop ngrok\n")
-
-        ngrok_process.wait()
-
-    except KeyboardInterrupt:
-        print("\n🛑 Stopping ngrok...")
-        ngrok_process.terminate()
-        sys.exit(0)
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        ngrok_proc.terminate()
 
 if __name__ == "__main__":
-    main()
+    launch()
