@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Submit ngrok URL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f4f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .card {
+            background: #fff;
+            padding: 24px;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        button {
+            background: #2563eb;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1e40af;
+        }
+        .status {
+            margin-top: 12px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Send ngrok URL to n8n</h2>
+
+    <input
+        type="url"
+        id="ngrokUrl"
+        placeholder="https://xxxx.ngrok-free.app"
+        required
+    >
+
+    <button onclick="send()">Submit</button>
+
+    <div class="status" id="status"></div>
+</div>
+
+<script>
+function send() {
+    const url = document.getElementById("ngrokUrl").value;
+    const status = document.getElementById("status");
+
+    if (!url.startsWith("https://")) {
+        status.innerText = "Please enter a valid HTTPS ngrok URL";
+        status.style.color = "red";
+        return;
+    }
+
+    fetch("https://n8n-xyz.ngrok-free.app/webhook/1d3ecb0e-e7e4-4cf0-87d1-d3411483bbaf", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            ngrok_url: url,
+            source: "public-website"
+        })
+    })
+    .then(r => r.json())
+    .then(() => {
+        status.innerText = "URL submitted successfully ✅";
+        status.style.color = "green";
+    })
+    .catch(() => {
+        status.innerText = "Failed to submit ❌";
+        status.style.color = "red";
+    });
+}
+</script>
+
+</body>
+</html>
