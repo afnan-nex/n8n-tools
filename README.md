@@ -2,3 +2,5 @@
 ```
 set NODES_EXCLUDE=[]
 ```
+```cmd
+setx NODES_EXCLUDE "[]"
