@@ -12,5 +12,5 @@ setx NODES_EXCLUDE "[]" /M
 ```
 setx NODES_EXCLUDE "[]"
 setx NODES_EXCLUDE "[]" /M
-echo Successfully added to environment variables
+
 ```
