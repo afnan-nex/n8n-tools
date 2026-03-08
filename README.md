@@ -3,7 +3,9 @@
 ```
 set NODES_EXCLUDE=[]
 ```
-
 ```
 setx NODES_EXCLUDE "[]"
+```
+```
+setx NODES_EXCLUDE "[]" /M
 ```
