@@ -17,7 +17,7 @@
             background-color: black;
             color: gray;
             font-family: monospace;
-            overflow: hidden; /* Prevents whole-page scrolling */
+            overflow: hidden;
         }
 
         body {
@@ -41,7 +41,7 @@
         }
 
         .form-group.code-group {
-            flex-grow: 1; /* Automatically takes up available vertical space */
+            flex-grow: 1;
             margin-bottom: 8px;
         }
 
@@ -54,7 +54,7 @@
 
         input[type="text"], textarea {
             background-color: black;
-            color: white; /* Full white text inside input fields */
+            color: white;
             border: 1px solid gray;
             padding: 6px;
             font-family: monospace;
@@ -62,7 +62,6 @@
             outline: none;
         }
 
-        /* Specific input formatting */
         #fileName, #filePath {
             height: 32px;
         }
@@ -74,10 +73,9 @@
             white-space: pre;
         }
 
-        /* Generated Command Field */
         #commandOutput {
             height: 65px;
-            color: #00ff00; /* Bright Green command */
+            color: #00ff00;
             resize: none;
             flex-shrink: 0;
         }
@@ -117,7 +115,7 @@
     
     <div class="form-group">
         <label for="fileName">1. File Name (-n)</label>
-        <input type="text" id="fileName" value="program.py" oninput="generateCommand()">
+        <input type="text" id="fileName" value="this is my script.py" oninput="generateCommand()">
     </div>
 
     <div class="form-group">
@@ -145,44 +143,84 @@ print(f"The sum of {num1} and {num2} is {sum_result}.")</textarea>
     </div>
 
     <div class="btn-container">
-        <button onclick="copyToClipboard()">Copy Command</button>
+        <button onclick="copyToClipboard('command')">Copy Command</button>
+        <button onclick="copyToClipboard('execute')">Copy Execute Command</button>
         <span id="toast">Copied!</span>
     </div>
 
 <script>
+let fullFilePath = "";
+
 function generateCommand() {
-    const nameInput = document.getElementById('fileName').value.trim();
+    let nameInput = document.getElementById('fileName').value.trim();
     let pathInput = document.getElementById('filePath').value.trim();
     const rawCode = document.getElementById('codeContent').value;
 
-    // 1. Process Path
+    // 1. Process File Name
+    nameInput = nameInput.replace(/^"+|"+$/g, '');
+    const formattedName = `"${nameInput}"`;
+
+    // 2. Process Path
     pathInput = pathInput.replace(/^"+|"+$/g, '');
     pathInput = pathInput.replace(/\//g, '\\');
     const formattedPath = `"${pathInput}"`;
 
-    // 2. Process Code (Escaping backslashes and double quotes)
+    // Save full file path for execution command
+    if (pathInput.endsWith('\\')) {
+        fullFilePath = `"${pathInput}${nameInput}"`;
+    } else {
+        fullFilePath = `"${pathInput}\\${nameInput}"`;
+    }
+
+    // 3. Process Code
     let escapedCode = rawCode
         .replace(/\\/g, '\\\\')
         .replace(/"/g, '\\"');
 
     const formattedCode = `"${escapedCode}"`;
 
-    // 3. Assemble Full Command
-    const command = `file-writer.exe -n ${nameInput} -p ${formattedPath} -c ${formattedCode}`;
+    // 4. Assemble Final Command
+    const command = `file-writer.exe -n ${formattedName} -p ${formattedPath} -c ${formattedCode}`;
 
     document.getElementById('commandOutput').value = command;
 }
 
-function copyToClipboard() {
-    const output = document.getElementById('commandOutput');
-    output.select();
-    document.execCommand('copy');
+function getExecutionCommand() {
+    const nameInput = document.getElementById('fileName').value.trim().toLowerCase();
     
+    // Auto-detect runtime execution command based on extension
+    if (nameInput.endsWith('.py')) {
+        return `python ${fullFilePath}`;
+    } else if (nameInput.endsWith('.js')) {
+        return `node ${fullFilePath}`;
+    } else if (nameInput.endsWith('.sh')) {
+        return `bash ${fullFilePath}`;
+    } else if (nameInput.endsWith('.ps1')) {
+        return `powershell -ExecutionPolicy Bypass -File ${fullFilePath}`;
+    } else {
+        // Direct execution for .exe, .bat, .cmd, or general files
+        return fullFilePath;
+    }
+}
+
+function copyToClipboard(type) {
+    let textToCopy = "";
     const toast = document.getElementById('toast');
-    toast.style.display = 'inline';
-    setTimeout(() => {
-        toast.style.display = 'none';
-    }, 2000);
+
+    if (type === 'command') {
+        textToCopy = document.getElementById('commandOutput').value;
+        toast.innerText = "Copied file-writer command!";
+    } else if (type === 'execute') {
+        textToCopy = getExecutionCommand();
+        toast.innerText = "Copied execution command!";
+    }
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        toast.style.display = 'inline';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 2000);
+    });
 }
 
 window.onload = generateCommand;
