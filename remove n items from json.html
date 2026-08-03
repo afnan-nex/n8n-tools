@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trim JSON Links</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f9f9f9;
+    }
+    textarea, input, button {
+      width: 100%;
+      font-size: 16px;
+      margin: 10px 0;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    pre {
+      background: #fff;
+      padding: 15px;
+      border: 1px solid #ccc;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .info {
+      margin: 10px 0;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Remove Top N Items from JSON</h2>
+
+  <label for="jsonInput">Paste your JSON Array of URLs:</label>
+  <textarea id="jsonInput" placeholder='[ { "url": "https://..." }, ... ]' oninput="countLinks()"></textarea>
+
+  <div class="info" id="linkCount">Total Links: 0</div>
+
+  <label for="removeCount">How many links to remove from top?</label>
+  <input type="number" id="removeCount" min="0" value="0">
+
+  <button onclick="processLinks()">Process</button>
+
+  <div class="info" id="outputCount"></div>
+
+  <h3>Remaining JSON Output:</h3>
+  <pre id="output"></pre>
+  <button onclick="copyOutput()">📋 Copy Output</button>
+
+  <script>
+    function countLinks() {
+      const rawInput = document.getElementById('jsonInput').value;
+      try {
+        const parsed = JSON.parse(rawInput);
+        document.getElementById('linkCount').textContent = `Total Links: ${parsed.length}`;
+      } catch {
+        document.getElementById('linkCount').textContent = 'Total Links: 0';
+      }
+      document.getElementById('outputCount').textContent = '';
+      document.getElementById('output').textContent = '';
+    }
+
+    function processLinks() {
+      const rawInput = document.getElementById('jsonInput').value;
+      const removeCount = parseInt(document.getElementById('removeCount').value, 10);
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawInput);
+      } catch (e) {
+        document.getElementById('output').textContent = '❌ Invalid JSON input!';
+        document.getElementById('outputCount').textContent = '';
+        return;
+      }
+
+      if (!Array.isArray(parsed)) {
+        document.getElementById('output').textContent = '❌ JSON must be an array of objects.';
+        document.getElementById('outputCount').textContent = '';
+        return;
+      }
+
+      const total = parsed.length;
+
+      if (removeCount >= total) {
+        document.getElementById('output').textContent = '⚠️ You tried to remove more links than available.';
+        document.getElementById('outputCount').textContent = 'Remaining Links: 0';
+        return;
+      }
+
+      const remaining = parsed.slice(removeCount);
+      document.getElementById('output').textContent = JSON.stringify(remaining, null, 2);
+      document.getElementById('outputCount').textContent = `Remaining Links: ${remaining.length}`;
+    }
+
+    function copyOutput() {
+      const outputText = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(outputText)
+        .then(() => alert('✅ Output copied to clipboard!'))
+        .catch(err => alert('❌ Failed to copy: ' + err));
+    }
+  </script>
+
+</body>
+</html>
