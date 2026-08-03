@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>n8n Command Builder</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100vh;
+            width: 100vw;
+            background-color: black;
+            color: gray;
+            font-family: monospace;
+            overflow: hidden; /* Prevents whole-page scrolling */
+        }
+
+        body {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            color: gray;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .form-group {
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .form-group.code-group {
+            flex-grow: 1; /* Automatically takes up available vertical space */
+            margin-bottom: 8px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 0.85rem;
+            color: gray;
+        }
+
+        input[type="text"], textarea {
+            background-color: black;
+            color: white; /* Full white text inside input fields */
+            border: 1px solid gray;
+            padding: 6px;
+            font-family: monospace;
+            width: 100%;
+            outline: none;
+        }
+
+        /* Specific input formatting */
+        #fileName, #filePath {
+            height: 32px;
+        }
+
+        #codeContent {
+            flex-grow: 1;
+            height: 100%;
+            resize: none;
+            white-space: pre;
+        }
+
+        /* Generated Command Field */
+        #commandOutput {
+            height: 65px;
+            color: #00ff00; /* Bright Green command */
+            resize: none;
+            flex-shrink: 0;
+        }
+
+        .btn-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        button {
+            background-color: black;
+            color: gray;
+            border: 1px solid gray;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+
+        button:hover {
+            color: white;
+            border-color: white;
+        }
+
+        #toast {
+            display: none;
+            color: #00ff00;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>CLI Command Generator for n8n</h2>
+    
+    <div class="form-group">
+        <label for="fileName">1. File Name (-n)</label>
+        <input type="text" id="fileName" value="program.py" oninput="generateCommand()">
+    </div>
+
+    <div class="form-group">
+        <label for="filePath">2. Destination Path (-p)</label>
+        <input type="text" id="filePath" value="C:/Users/Admin/Documents/Untitled" oninput="generateCommand()">
+    </div>
+
+    <div class="form-group code-group">
+        <label for="codeContent">3. Raw Code Content (-c)</label>
+        <textarea id="codeContent" oninput="generateCommand()"># Ask for the user's name
+name = input("Enter your name: ")
+print(f"Hello, {name}! Welcome to Python.")
+
+# Simple arithmetic calculation
+num1 = float(input("Enter the first number: "))
+num2 = float(input("Enter the second number: "))
+
+sum_result = num1 + num2
+print(f"The sum of {num1} and {num2} is {sum_result}.")</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="commandOutput">Generated Command:</label>
+        <textarea id="commandOutput" readonly></textarea>
+    </div>
+
+    <div class="btn-container">
+        <button onclick="copyToClipboard()">Copy Command</button>
+        <span id="toast">Copied!</span>
+    </div>
+
+<script>
+function generateCommand() {
+    const nameInput = document.getElementById('fileName').value.trim();
+    let pathInput = document.getElementById('filePath').value.trim();
+    const rawCode = document.getElementById('codeContent').value;
+
+    // 1. Process Path
+    pathInput = pathInput.replace(/^"+|"+$/g, '');
+    pathInput = pathInput.replace(/\//g, '\\');
+    const formattedPath = `"${pathInput}"`;
+
+    // 2. Process Code (Escaping backslashes and double quotes)
+    let escapedCode = rawCode
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"');
+
+    const formattedCode = `"${escapedCode}"`;
+
+    // 3. Assemble Full Command
+    const command = `file-writer.exe -n ${nameInput} -p ${formattedPath} -c ${formattedCode}`;
+
+    document.getElementById('commandOutput').value = command;
+}
+
+function copyToClipboard() {
+    const output = document.getElementById('commandOutput');
+    output.select();
+    document.execCommand('copy');
+    
+    const toast = document.getElementById('toast');
+    toast.style.display = 'inline';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 2000);
+}
+
+window.onload = generateCommand;
+</script>
+
+</body>
+</html>
