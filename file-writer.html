@@ -114,7 +114,7 @@
     <h2>CLI Command Generator for n8n</h2>
     
     <div class="form-group">
-        <label for="fileName">1. File Name (-n)</label>
+        <label for="fileName">1. File Name (-d)</label>
         <input type="text" id="fileName" value="this is my script.py" oninput="generateCommand()">
     </div>
 
@@ -179,8 +179,8 @@ function generateCommand() {
 
     const formattedCode = `"${escapedCode}"`;
 
-    // 4. Assemble Final Command
-    const command = `file-writer.exe -n ${formattedName} -p ${formattedPath} -c ${formattedCode}`;
+    // 4. Assemble Final Command (Permanent -d Flag)
+    const command = `file-writer.exe -d ${formattedName} -p ${formattedPath} -c ${formattedCode}`;
 
     document.getElementById('commandOutput').value = command;
 }
