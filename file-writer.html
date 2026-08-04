@@ -165,17 +165,17 @@ function generateCommand() {
     pathInput = pathInput.replace(/\//g, '\\');
     const formattedPath = `"${pathInput}"`;
 
-    // Save full file path for execution command
     if (pathInput.endsWith('\\')) {
         fullFilePath = `"${pathInput}${nameInput}"`;
     } else {
         fullFilePath = `"${pathInput}\\${nameInput}"`;
     }
 
-    // 3. Process Code
+    // 3. Process Code (Escape backslashes, quotes, AND convert newlines to \n)
     let escapedCode = rawCode
         .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"');
+        .replace(/"/g, '\\"')
+        .replace(/\r?\n/g, '\\n'); // <-- Fixes CMD multi-line truncation!
 
     const formattedCode = `"${escapedCode}"`;
 
