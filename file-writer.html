@@ -146,7 +146,8 @@ print(f"The sum of {num1} and {num2} is {sum_result}.")</textarea>
     </div>
 
     <div class="btn-container">
-        <button onclick="copyToClipboard('command')">Copy Command</button>
+        <button onclick="copyToClipboard('command')">Copy CMD Command</button>
+        <button onclick="copyToClipboard('pipe')">Copy CMD Pipe Command (Safe/Large Files)</button>
         <button onclick="copyToClipboard('execute')">Copy Execute Command</button>
         <span id="toast">Copied!</span>
     </div>
@@ -189,6 +190,22 @@ function generateCommand() {
     document.getElementById('commandOutput').value = command;
 }
 
+function getPipeCommand() {
+    let nameInput = document.getElementById('fileName').value.trim();
+    let pathInput = document.getElementById('filePath').value.trim();
+    const rawCode = document.getElementById('codeContent').value;
+
+    nameInput = nameInput.replace(/^"+|"+$/g, '');
+    pathInput = pathInput.replace(/^"+|"+$/g, '');
+    pathInput = pathInput.replace(/\//g, '\\');
+    pathInput = pathInput.replace(/\\+$/, '');
+
+    // Safely encode Unicode text to base64
+    const base64Code = btoa(unescape(encodeURIComponent(rawCode)));
+
+    return `powershell -Command "[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${base64Code}'))" | file-writer.exe -d "${nameInput}" -p "${pathInput}"`;
+}
+
 function getExecutionCommand() {
     const nameInput = document.getElementById('fileName').value.trim().toLowerCase();
     
@@ -214,6 +231,9 @@ function copyToClipboard(type) {
     if (type === 'command') {
         textToCopy = document.getElementById('commandOutput').value;
         toast.innerText = "Copied file-writer command!";
+    } else if (type === 'pipe') {
+        textToCopy = getPipeCommand();
+        toast.innerText = "Copied safe CMD Pipe command!";
     } else if (type === 'execute') {
         textToCopy = getExecutionCommand();
         toast.innerText = "Copied execution command!";
