@@ -176,10 +176,10 @@ function generateCommand() {
         fullFilePath = `"${pathInput}\\${nameInput}"`;
     }
 
-    // 3. Process Code (Escape backslashes, quotes, AND convert newlines to \n)
+    // 3. Process Code (Escape backslashes, convert double quotes to \q, AND convert newlines to \n)
     let escapedCode = rawCode
         .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"')
+        .replace(/"/g, '\\q')      // <-- Convert double quotes to \q to bypass CMD quote parsing issues!
         .replace(/\r?\n/g, '\\n'); // <-- Fixes CMD multi-line truncation!
 
     const formattedCode = `"${escapedCode}"`;
