@@ -2,6 +2,13 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
+#include <cstdio>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -46,12 +53,14 @@ void print_usage() {
     std::cout << "file-writer CLI Utility\n"
               << "Usage:\n"
               << "  file-writer.exe -n \"filename.ext\" -p \"C:\\target\\path\" -c \"code content\"\n"
-              << "  file-writer.exe -d \"filename.ext\" -p \"C:\\target\\path\" -c \"code content\"\n\n"
+              << "  file-writer.exe -d \"filename.ext\" -p \"C:\\target\\path\" -c \"code content\"\n"
+              << "  file-writer.exe -n \"filename.ext\" -p \"C:\\target\\path\" < input.txt\n"
+              << "  echo \"code content\" | file-writer.exe -n \"filename.ext\" -p \"C:\\target\\path\"\n\n"
               << "Parameters:\n"
               << "  -n <filename> : Specify output filename.\n"
               << "  -d <filename> : Specify output filename AND force-delete any existing file first.\n"
               << "  -p <path>     : Destination directory path.\n"
-              << "  -c <content>  : Raw code content (supports escape sequences like \\n).\n";
+              << "  -c <content>  : Raw code content (supports escape sequences like \\n). Use '-' to read from stdin.\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -59,6 +68,7 @@ int main(int argc, char* argv[]) {
     std::string folder_path;
     std::string code_content;
     bool force_delete = false;
+    bool has_c_flag = false;
 
     // Parse command line arguments
     for (int i = 1; i < argc; ++i) {
@@ -73,12 +83,41 @@ int main(int argc, char* argv[]) {
             folder_path = argv[++i];
         } else if (arg == "-c" && i + 1 < argc) {
             code_content = argv[++i];
+            has_c_flag = true;
         }
     }
 
-    // Input validation
+    // Input validation for target destination
     if (filename.empty() || folder_path.empty()) {
         std::cerr << "[ERROR] Missing required arguments.\n\n";
+        print_usage();
+        return 1;
+    }
+
+    // Determine if we should read from standard input
+    bool read_from_stdin = false;
+    if (has_c_flag && code_content == "-") {
+        read_from_stdin = true;
+    } else if (!has_c_flag) {
+#ifdef _WIN32
+        HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD dwType = GetFileType(hStdin);
+        if (dwType != FILE_TYPE_CHAR && dwType != FILE_TYPE_UNKNOWN) {
+            read_from_stdin = true;
+        }
+#else
+        if (!isatty(0)) {
+            read_from_stdin = true;
+        }
+#endif
+    }
+
+    if (read_from_stdin) {
+        // Read raw data from stdin
+        code_content = std::string((std::istreambuf_iterator<char>(std::cin)),
+                                    std::istreambuf_iterator<char>());
+    } else if (!has_c_flag) {
+        std::cerr << "[ERROR] Missing code content. Provide -c <content> or pipe/redirect input.\n\n";
         print_usage();
         return 1;
     }
@@ -86,8 +125,8 @@ int main(int argc, char* argv[]) {
     try {
         fs::path dir(folder_path);
         
-        // 1. Create target directories if missing
-        if (!dir.empty() && !fs::exists(dir)) {
+        // 1. Create target directories if missing (skip root-only paths like C: or C:\)
+        if (!dir.empty() && dir.has_relative_path() && !fs::exists(dir)) {
             std::error_code ec;
             fs::create_directories(dir, ec);
             if (ec) {
@@ -103,8 +142,13 @@ int main(int argc, char* argv[]) {
             remove_existing_file(full_file_path);
         }
 
-        // 3. Unescape raw string input (\n -> newline, etc.)
-        std::string processed_content = unescape_string(code_content);
+        // 3. Process content: unescape command-line input, or use stdin raw
+        std::string processed_content;
+        if (read_from_stdin) {
+            processed_content = code_content;
+        } else {
+            processed_content = unescape_string(code_content);
+        }
 
         // 4. Write string content to the target file
         std::ofstream out_file(full_file_path, std::ios::out | std::ios::binary);

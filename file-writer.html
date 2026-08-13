@@ -166,6 +166,7 @@ function generateCommand() {
     // 2. Process Path
     pathInput = pathInput.replace(/^"+|"+$/g, '');
     pathInput = pathInput.replace(/\//g, '\\');
+    pathInput = pathInput.replace(/\\+$/, ''); // Strip trailing backslashes to avoid Windows CLI escaping bug
     const formattedPath = `"${pathInput}"`;
 
     if (pathInput.endsWith('\\')) {
