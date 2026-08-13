@@ -207,21 +207,8 @@ function getPipeCommand() {
 }
 
 function getExecutionCommand() {
-    const nameInput = document.getElementById('fileName').value.trim().toLowerCase();
-    
-    // Auto-detect runtime execution command based on extension
-    if (nameInput.endsWith('.py')) {
-        return `python ${fullFilePath}`;
-    } else if (nameInput.endsWith('.js')) {
-        return `node ${fullFilePath}`;
-    } else if (nameInput.endsWith('.sh')) {
-        return `bash ${fullFilePath}`;
-    } else if (nameInput.endsWith('.ps1')) {
-        return `powershell -ExecutionPolicy Bypass -File ${fullFilePath}`;
-    } else {
-        // Direct execution for .exe, .bat, .cmd, or general files
-        return fullFilePath;
-    }
+    // Return direct file invocation (uses OS default program associations)
+    return fullFilePath;
 }
 
 function copyToClipboard(type) {

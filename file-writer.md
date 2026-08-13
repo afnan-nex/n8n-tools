@@ -95,16 +95,14 @@ file-writer.exe -n "this is my script.py" -p "C:\Users\Admin\Documents\Untitled"
 
 ---
 
-### 2. Execution Command Auto-Detection
-When using the web interface, clicking **Copy Execute Command** formats the target execution based on the file extension:
+### 2. Direct Execution Command
+When using the web interface, clicking **Copy Execute Command** copies the direct absolute path of the generated script:
 
-| File Extension | Target Execution Command |
-| :--- | :--- |
-| `.py` | `python "C:\path\file.py"` |
-| `.js` | `node "C:\path\file.js"` |
-| `.ps1` | `powershell -ExecutionPolicy Bypass -File "C:\path\file.ps1"` |
-| `.sh` | `bash "C:\path\file.sh"` |
-| `.exe` / `.bat` / `.cmd` / default | `"C:\path\file.exe"` |
+```cmd
+"C:\path\file.ext"
+```
+
+This allows Windows/n8n to run the file directly using the operating system's default file type associations (e.g. running `.py` files with the default Python interpreter).
 
 ---
 
